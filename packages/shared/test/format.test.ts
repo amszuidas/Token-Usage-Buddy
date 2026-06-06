@@ -10,8 +10,19 @@ describe('formatEngineeringTokens', () => {
     expect(formatEngineeringTokens(2_500_000_000_000)).toBe('2.5T');
   });
 
+  it('promotes rounded threshold values to the next unit', () => {
+    expect(formatEngineeringTokens(999_950)).toBe('1.0M');
+    expect(formatEngineeringTokens(999_950_000)).toBe('1.0B');
+    expect(formatEngineeringTokens(999_950_000_000)).toBe('1.0T');
+  });
+
   it('clamps negative display values to zero', () => {
     expect(formatEngineeringTokens(-10)).toBe('0');
+  });
+
+  it('clamps non-finite display values to zero', () => {
+    expect(formatEngineeringTokens(Number.NaN)).toBe('0');
+    expect(formatEngineeringTokens(Number.POSITIVE_INFINITY)).toBe('0');
   });
 });
 
@@ -19,5 +30,10 @@ describe('formatUsd', () => {
   it('formats costs with two decimals', () => {
     expect(formatUsd(12.4)).toBe('$12.40');
     expect(formatUsd(0)).toBe('$0.00');
+  });
+
+  it('clamps non-finite display values to zero', () => {
+    expect(formatUsd(Number.NaN)).toBe('$0.00');
+    expect(formatUsd(Number.POSITIVE_INFINITY)).toBe('$0.00');
   });
 });
