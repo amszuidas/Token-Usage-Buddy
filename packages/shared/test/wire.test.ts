@@ -72,4 +72,8 @@ describe('decodeDeviceEvent', () => {
   it('rejects duplicate-key refresh event bypasses', () => {
     expect(decodeDeviceEvent(Buffer.from('{"ev":"deny","ev":"refresh"}'))).toBeNull();
   });
+
+  it('rejects non-JSON whitespace in refresh events', () => {
+    expect(decodeDeviceEvent(Buffer.from('{"ev"\u000b:\u000b"refresh"}'))).toBeNull();
+  });
 });

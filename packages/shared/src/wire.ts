@@ -12,7 +12,8 @@ export interface DeviceEvent {
 const MAGIC = Buffer.from('TUB1', 'ascii');
 const KIND_DASHBOARD = 1;
 const MAX_FRAGMENT_BYTES = 150;
-const REFRESH_EVENT_JSON = /^\{\s*"ev"\s*:\s*"refresh"\s*\}$/;
+const JSON_WS = '[ \\t\\r\\n]*';
+const REFRESH_EVENT_JSON = new RegExp(`^${JSON_WS}\\{${JSON_WS}"ev"${JSON_WS}:${JSON_WS}"refresh"${JSON_WS}\\}${JSON_WS}$`);
 
 export function encodeDashboardFrames(jsonPayload: string, frameId: number): Buffer[] {
   if (!Number.isInteger(frameId) || frameId < 1 || frameId > 255) {
@@ -55,7 +56,7 @@ export function reassembleDashboardFrames(frames: Buffer[]): string {
 }
 
 export function decodeDeviceEvent(buf: Buffer): DeviceEvent | null {
-  const text = buf.toString('utf8').trim();
+  const text = buf.toString('utf8');
   return REFRESH_EVENT_JSON.test(text) ? { ev: 'refresh' } : null;
 }
 
