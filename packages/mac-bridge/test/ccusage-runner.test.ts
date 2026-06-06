@@ -40,6 +40,17 @@ describe('collectCcusageJson', () => {
         exec,
       }),
     ).resolves.toEqual({ daily: [] });
+    expect(exec).toHaveBeenCalledWith('npx', [
+      'ccusage@latest',
+      'daily',
+      '--json',
+      '--since',
+      '20260601',
+      '--until',
+      '20260606',
+      '--timezone',
+      'Asia/Shanghai',
+    ]);
   });
 });
 
