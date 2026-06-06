@@ -1,6 +1,7 @@
 export interface RefreshSchedulerOptions {
   refreshIntervalMs: number;
   refresh: () => Promise<void>;
+  onError?: (error: unknown) => void;
 }
 
 export function createRefreshScheduler(options: RefreshSchedulerOptions) {
@@ -9,8 +10,17 @@ export function createRefreshScheduler(options: RefreshSchedulerOptions) {
 
   async function tick() {
     if (stopped) return;
-    await options.refresh();
-    if (!stopped) timer = setTimeout(tick, options.refreshIntervalMs);
+    try {
+      await options.refresh();
+    } catch (error) {
+      try {
+        options.onError?.(error);
+      } catch {
+        // Keep scheduler ticks from surfacing unhandled rejections.
+      }
+    } finally {
+      if (!stopped) timer = setTimeout(tick, options.refreshIntervalMs);
+    }
   }
 
   return {

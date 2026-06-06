@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -24,5 +24,11 @@ describe('snapshot cache', () => {
 
   it('returns null when cache file is missing', async () => {
     await expect(readCachedSnapshot(join(dir, 'missing.json'))).resolves.toBeNull();
+  });
+
+  it('rejects when cache file contains invalid JSON', async () => {
+    const path = join(dir, 'invalid.json');
+    await writeFile(path, '{invalid', 'utf8');
+    await expect(readCachedSnapshot(path)).rejects.toThrow(SyntaxError);
   });
 });
