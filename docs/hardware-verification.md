@@ -38,7 +38,7 @@ Use this checklist with an M5Stack Core2 v1.3 and the Mac bridge.
 
 9. Confirm the 7-day Trend view shows seven bars.
 
-10. Confirm the Breakdown view shows input, output, cache, and other token buckets, or `No breakdown yet` when totals are zero.
+10. Confirm the Breakdown view shows input, cache-create, cache-read, and output token buckets, or `No breakdown yet` when totals are zero.
 
 11. Confirm the Status view shows Bluetooth, ccusage version, next refresh, state, and any error text.
 

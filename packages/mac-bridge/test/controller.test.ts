@@ -123,6 +123,93 @@ describe('createBridgeController', () => {
     });
   });
 
+  it('coalesces concurrent refresh calls into one collection and one result send', async () => {
+    const sent: string[] = [];
+    const fresh = { schemaVersion: 1, stale: false, refreshInProgress: false, today: { totalTokens: 2 } };
+    const freshSnapshot = createDeferred<typeof fresh>();
+    const readCache = vi.fn().mockResolvedValue(null);
+    const writeCache = vi.fn();
+    const collectSnapshot = vi.fn().mockReturnValue(freshSnapshot.promise);
+
+    const controller = createBridgeController({
+      config,
+      ble: { sendJson: async (json) => { sent.push(json); }, onRefreshRequest: vi.fn() },
+      readCache,
+      writeCache,
+      collectSnapshot,
+      now,
+    });
+
+    const firstRefresh = controller.refresh();
+    const secondRefresh = controller.refresh();
+    await flushAsyncWork();
+
+    expect(firstRefresh).toBe(secondRefresh);
+    expect(readCache).toHaveBeenCalledTimes(1);
+    expect(collectSnapshot).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveLength(1);
+    expect(JSON.parse(sent[0])).toMatchObject({
+      stale: true,
+      refreshInProgress: true,
+    });
+
+    freshSnapshot.resolve(fresh);
+    await Promise.all([firstRefresh, secondRefresh]);
+
+    expect(writeCache).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveLength(2);
+    expect(JSON.parse(sent[1])).toMatchObject({
+      stale: false,
+      refreshInProgress: false,
+      today: { totalTokens: 2 },
+    });
+  });
+
+  it('coalesces a manual refresh request while a refresh is already running', async () => {
+    const sent: string[] = [];
+    let refreshHandler: (() => void) | null = null;
+    const fresh = { schemaVersion: 1, stale: false, refreshInProgress: false, today: { totalTokens: 3 } };
+    const freshSnapshot = createDeferred<typeof fresh>();
+    const collectSnapshot = vi.fn().mockReturnValue(freshSnapshot.promise);
+
+    const controller = createBridgeController({
+      config,
+      ble: {
+        sendJson: async (json) => { sent.push(json); },
+        onRefreshRequest: (handler) => { refreshHandler = handler; },
+      },
+      readCache: vi.fn().mockResolvedValue(null),
+      writeCache: vi.fn(),
+      collectSnapshot,
+      now,
+    });
+
+    controller.registerDeviceEvents();
+    const scheduledRefresh = controller.refresh();
+    await flushAsyncWork();
+
+    refreshHandler?.();
+    await flushAsyncWork();
+
+    expect(collectSnapshot).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveLength(1);
+    expect(JSON.parse(sent[0])).toMatchObject({
+      stale: true,
+      refreshInProgress: true,
+    });
+
+    freshSnapshot.resolve(fresh);
+    await scheduledRefresh;
+    await flushAsyncWork();
+
+    expect(sent).toHaveLength(2);
+    expect(JSON.parse(sent[1])).toMatchObject({
+      stale: false,
+      refreshInProgress: false,
+      today: { totalTokens: 3 },
+    });
+  });
+
   it('turns off refreshInProgress with cached stale data when scheduled refresh fails with cache', async () => {
     const sent: string[] = [];
     const cached = {

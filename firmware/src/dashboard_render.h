@@ -150,7 +150,7 @@ inline void drawTrend(M5GFX& gfx, const DashboardData& data) {
 }
 
 inline void drawBreakdown(M5GFX& gfx, const DashboardData& data) {
-  static const char* labels[4] = {"Input", "Output", "Cache", "Other"};
+  static const char* labels[4] = {"Input", "Cache Create", "Cache Read", "Output"};
   static const uint16_t colors[4] = {0x07FF, 0xFD20, 0x7BEF, 0xC618};
 
   uint32_t total = 0;

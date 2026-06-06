@@ -15,6 +15,8 @@ export interface BridgeControllerOptions {
 }
 
 export function createBridgeController(options: BridgeControllerOptions) {
+  let inFlightRefresh: Promise<void> | null = null;
+
   async function sendSnapshot(snapshot: unknown | null, state: SnapshotState): Promise<void> {
     await options.ble.sendJson(JSON.stringify(applyState(snapshot, state, options)));
   }
@@ -41,7 +43,18 @@ export function createBridgeController(options: BridgeControllerOptions) {
     await options.ble.sendJson(JSON.stringify(fresh));
   }
 
-  async function refresh(): Promise<void> {
+  function refresh(): Promise<void> {
+    if (inFlightRefresh != null) {
+      return inFlightRefresh;
+    }
+
+    inFlightRefresh = runRefresh().finally(() => {
+      inFlightRefresh = null;
+    });
+    return inFlightRefresh;
+  }
+
+  async function runRefresh(): Promise<void> {
     let cachedSnapshot: unknown | null = null;
     try {
       cachedSnapshot = await options.readCache();

@@ -11,7 +11,7 @@ The firmware has five views:
 - Today: today's total tokens, cost, update time, and stale state.
 - Agents: Claude, Codex, OpenCode, and Others.
 - 7-day Trend: daily token bars for the last seven days.
-- Breakdown: input, output, cache, and other token buckets.
+- Breakdown: input, cache-create, cache-read, and output token buckets.
 - Status: Bluetooth, ccusage version, next refresh, state, and errors.
 
 Touch is handled by three invisible bottom zones. Tap the bottom left third for previous view, the bottom center third for manual refresh, and the bottom right third for next view. There are no bottom labels. Manual refresh sends a BLE event to the Mac; the device shows an `Updating` / `Running ccusage...` overlay until fresh data, an error payload, or a disconnect clears it.
