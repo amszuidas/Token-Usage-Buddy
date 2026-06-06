@@ -8,6 +8,7 @@ void test_core2_touch_buttons_map_to_actions();
 void test_large_trend_values_scale_without_uint32_overflow();
 void test_non_zero_trend_values_keep_a_visible_bar();
 void test_breakdown_values_use_engineering_units();
+void test_bluetooth_icon_uses_standard_rune_segments();
 
 void test_view_navigation_wraps() {
   token_buddy::DashboardModel model;
@@ -40,5 +41,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_large_trend_values_scale_without_uint32_overflow);
   RUN_TEST(test_non_zero_trend_values_keep_a_visible_bar);
   RUN_TEST(test_breakdown_values_use_engineering_units);
+  RUN_TEST(test_bluetooth_icon_uses_standard_rune_segments);
   return UNITY_END();
 }

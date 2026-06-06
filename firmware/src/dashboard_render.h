@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "dashboard_model.h"
+#include "render_icons.h"
 #include "render_metrics.h"
 
 namespace token_buddy {
@@ -65,6 +66,15 @@ inline void clippedText(M5GFX& gfx, int32_t x, int32_t y, const char* value, siz
   text(gfx, x, y, buffer, color, size);
 }
 
+inline void drawBluetoothIcon(M5GFX& gfx, int32_t x, int32_t y, uint16_t color) {
+  const IconSegments icon = bluetoothIconSegments(x, y);
+  for (uint8_t i = 0; i < icon.count; ++i) {
+    const IconLine& line = icon.lines[i];
+    gfx.drawLine(line.x1, line.y1, line.x2, line.y2, color);
+    gfx.drawLine(line.x1 + 1, line.y1, line.x2 + 1, line.y2, color);
+  }
+}
+
 inline void drawTopBar(M5GFX& gfx, const DashboardModel& model) {
   const DashboardData& data = model.data();
   gfx.fillRect(0, 0, kWidth, kTopBarHeight, 0x0000);
@@ -74,16 +84,7 @@ inline void drawTopBar(M5GFX& gfx, const DashboardModel& model) {
   gfx.print(viewTitle(model.currentView()));
 
   const uint16_t btColor = data.bleConnected ? kGood : kMuted;
-  gfx.setTextColor(btColor, 0x0000);
-  gfx.setTextSize(1);
-  gfx.setCursor(242, 11);
-  gfx.print("BT");
-  gfx.drawCircle(272, 15, 7, btColor);
-  gfx.drawLine(272, 8, 272, 22, btColor);
-  gfx.drawLine(272, 8, 278, 15, btColor);
-  gfx.drawLine(272, 22, 278, 15, btColor);
-  gfx.drawLine(272, 8, 266, 15, btColor);
-  gfx.drawLine(272, 22, 266, 15, btColor);
+  drawBluetoothIcon(gfx, 270, 15, btColor);
 
   gfx.drawRect(290, 9, 22, 12, kText);
   gfx.fillRect(312, 12, 3, 6, kText);
