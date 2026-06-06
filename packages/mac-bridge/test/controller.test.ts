@@ -73,13 +73,13 @@ describe('createBridgeController', () => {
 
   it('turns off refreshInProgress and sends an error when manual refresh fails without cache', async () => {
     const sent: string[] = [];
-    let refreshHandler: (() => Promise<void>) | null = null;
+    let refreshHandler: (() => void) | null = null;
 
     const controller = createBridgeController({
       config,
       ble: {
         sendJson: async (json) => { sent.push(json); },
-        onRefreshRequest: (handler) => { refreshHandler = handler as () => Promise<void>; },
+        onRefreshRequest: (handler) => { refreshHandler = handler; },
       },
       readCache: vi.fn().mockResolvedValue(null),
       writeCache: vi.fn(),
@@ -88,7 +88,8 @@ describe('createBridgeController', () => {
     });
 
     controller.registerDeviceEvents();
-    await refreshHandler?.();
+    refreshHandler?.();
+    await flushAsyncWork();
 
     expect(JSON.parse(sent.at(-1) ?? '{}')).toMatchObject({
       schemaVersion: 1,
@@ -97,6 +98,101 @@ describe('createBridgeController', () => {
       generatedAt: '2026-06-06T14:20:00.000Z',
       error: 'ccusage failed',
     });
+  });
+
+  it('turns off refreshInProgress when scheduled refresh fails without cache', async () => {
+    const sent: string[] = [];
+
+    const controller = createBridgeController({
+      config,
+      ble: { sendJson: async (json) => { sent.push(json); }, onRefreshRequest: vi.fn() },
+      readCache: vi.fn().mockResolvedValue(null),
+      writeCache: vi.fn(),
+      collectSnapshot: vi.fn().mockRejectedValue(new Error('ccusage failed')),
+      now,
+    });
+
+    await expect(controller.refresh()).rejects.toThrow('ccusage failed');
+
+    expect(JSON.parse(sent.at(-1) ?? '{}')).toMatchObject({
+      schemaVersion: 1,
+      stale: true,
+      refreshInProgress: false,
+      generatedAt: '2026-06-06T14:20:00.000Z',
+      error: 'ccusage failed',
+    });
+  });
+
+  it('turns off refreshInProgress with cached stale data when scheduled refresh fails with cache', async () => {
+    const sent: string[] = [];
+    const cached = {
+      schemaVersion: 1,
+      stale: false,
+      refreshInProgress: false,
+      today: { totalTokens: 1 },
+    };
+
+    const controller = createBridgeController({
+      config,
+      ble: { sendJson: async (json) => { sent.push(json); }, onRefreshRequest: vi.fn() },
+      readCache: vi.fn().mockResolvedValue(cached),
+      writeCache: vi.fn(),
+      collectSnapshot: vi.fn().mockRejectedValue(new Error('ccusage failed')),
+      now,
+    });
+
+    await expect(controller.refresh()).rejects.toThrow('ccusage failed');
+
+    expect(JSON.parse(sent.at(-1) ?? '{}')).toMatchObject({
+      schemaVersion: 1,
+      stale: true,
+      refreshInProgress: false,
+      error: 'ccusage failed',
+      today: { totalTokens: 1 },
+    });
+  });
+
+  it('does not expose an async promise from the manual refresh handler', () => {
+    let refreshHandler: (() => void) | null = null;
+
+    const controller = createBridgeController({
+      config,
+      ble: {
+        sendJson: vi.fn().mockResolvedValue(undefined),
+        onRefreshRequest: (handler) => { refreshHandler = handler; },
+      },
+      readCache: vi.fn().mockResolvedValue(null),
+      writeCache: vi.fn(),
+      collectSnapshot: vi.fn().mockRejectedValue(new Error('ccusage failed')),
+      now,
+    });
+
+    controller.registerDeviceEvents();
+
+    expect(refreshHandler?.()).toBeUndefined();
+  });
+
+  it('swallows failed manual refresh error payload sends', async () => {
+    let refreshHandler: (() => void) | null = null;
+    const sendJson = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('ble write failed'));
+
+    const controller = createBridgeController({
+      config,
+      ble: {
+        sendJson,
+        onRefreshRequest: (handler) => { refreshHandler = handler; },
+      },
+      readCache: vi.fn().mockResolvedValue(null),
+      writeCache: vi.fn(),
+      collectSnapshot: vi.fn().mockRejectedValue(new Error('ccusage failed')),
+      now,
+    });
+
+    controller.registerDeviceEvents();
+    refreshHandler?.();
+    await flushAsyncWork();
+
+    expect(sendJson).toHaveBeenCalledTimes(2);
   });
 });
 

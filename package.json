@@ -13,5 +13,11 @@
     "typescript": "^5.8.3",
     "vitest": "^3.2.2"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@abandonware/noble",
+      "esbuild"
+    ]
+  },
   "packageManager": "pnpm@10.12.1"
 }

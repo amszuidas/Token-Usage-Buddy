@@ -42,9 +42,24 @@ export function createBridgeController(options: BridgeControllerOptions) {
   }
 
   async function refresh(): Promise<void> {
-    const cachedSnapshot = await options.readCache();
+    let cachedSnapshot: unknown | null = null;
+    try {
+      cachedSnapshot = await options.readCache();
+    } catch (error) {
+      await trySendRefreshError(error, null);
+      throw error;
+    }
+    await refreshFromCachedSnapshot(cachedSnapshot);
+  }
+
+  async function refreshFromCachedSnapshot(cachedSnapshot: unknown | null): Promise<void> {
     await sendRefreshInProgress(cachedSnapshot);
-    await collectCacheAndSendFresh();
+    try {
+      await collectCacheAndSendFresh();
+    } catch (error) {
+      await trySendRefreshError(error, cachedSnapshot);
+      throw error;
+    }
   }
 
   async function startOnce(): Promise<void> {
@@ -54,32 +69,33 @@ export function createBridgeController(options: BridgeControllerOptions) {
       return;
     }
 
-    await sendRefreshInProgress(cachedSnapshot);
-    await collectCacheAndSendFresh();
+    await refreshFromCachedSnapshot(cachedSnapshot);
   }
 
-  async function sendRefreshError(error: unknown): Promise<void> {
+  async function trySendRefreshError(error: unknown, cachedSnapshot: unknown | null | undefined = undefined): Promise<void> {
     const message = errorMessage(error);
-    let cachedSnapshot: unknown | null = null;
     try {
-      cachedSnapshot = await options.readCache();
+      let snapshot = cachedSnapshot;
+      if (snapshot === undefined) {
+        try {
+          snapshot = await options.readCache();
+        } catch {
+          snapshot = null;
+        }
+      }
+      await sendSnapshot(snapshot, {
+        stale: true,
+        refreshInProgress: false,
+        error: message,
+      });
     } catch {
-      cachedSnapshot = null;
+      // The manual BLE event path must never surface an unhandled rejection.
     }
-    await sendSnapshot(cachedSnapshot, {
-      stale: true,
-      refreshInProgress: false,
-      error: message,
-    });
   }
 
   function registerDeviceEvents(): void {
-    options.ble.onRefreshRequest(async () => {
-      try {
-        await refresh();
-      } catch (error) {
-        await sendRefreshError(error);
-      }
+    options.ble.onRefreshRequest(() => {
+      void refresh().catch(() => undefined);
     });
   }
 
