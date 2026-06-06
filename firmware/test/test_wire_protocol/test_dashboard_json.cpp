@@ -33,7 +33,7 @@ void test_full_dashboard_json_maps_display_data() {
 
   const char* json = R"json({
     "schemaVersion": 1,
-    "generatedAt": "2026-06-06T09:10:11.000Z",
+    "generatedAt": "2026-06-06T09:20:11.000Z",
     "timezone": "Asia/Shanghai",
     "ccusageVersion": "15.2.1",
     "stale": false,
@@ -76,8 +76,8 @@ void test_full_dashboard_json_maps_display_data() {
   TEST_ASSERT_FALSE(result.refreshInProgress);
   TEST_ASSERT_EQUAL_STRING("1.23M", data.todayTotal);
   TEST_ASSERT_EQUAL_STRING("$12.34", data.cost);
-  TEST_ASSERT_EQUAL_STRING("2026-06-06T09:10:11.000", data.updatedAt);
-  TEST_ASSERT_EQUAL_STRING("2026-06-06T09:2", data.nextRefresh);
+  TEST_ASSERT_EQUAL_STRING("09:20", data.updatedAt);
+  TEST_ASSERT_EQUAL_STRING("09:25", data.nextRefresh);
   TEST_ASSERT_EQUAL_STRING("15.2.1", data.ccusageVersion);
   TEST_ASSERT_FALSE(data.stale);
   TEST_ASSERT_EQUAL_STRING("", data.error);
@@ -125,7 +125,7 @@ void test_partial_refresh_progress_preserves_metrics_and_sets_status() {
   TEST_ASSERT_TRUE(result.ok);
   TEST_ASSERT_TRUE(result.refreshInProgress);
   TEST_ASSERT_TRUE(data.stale);
-  TEST_ASSERT_EQUAL_STRING("2026-06-06T10:00:00.000", data.updatedAt);
+  TEST_ASSERT_EQUAL_STRING("10:00", data.updatedAt);
   TEST_ASSERT_EQUAL_STRING("", data.nextRefresh);
   TEST_ASSERT_EQUAL_STRING("refresh failed", data.error);
   TEST_ASSERT_EQUAL_STRING("existing", data.todayTotal);
@@ -172,6 +172,25 @@ void test_unsupported_schema_version_rejected() {
   TEST_ASSERT_EQUAL_STRING("existing", data.todayTotal);
 }
 
+void test_unexpected_timestamp_text_copies_or_ellipsizes_cleanly() {
+  token_buddy::DashboardData data;
+
+  const token_buddy::DashboardJsonParseResult shortResult =
+      token_buddy::parseDashboardJson("{\"schemaVersion\":1,\"generatedAt\":\"manual\",\"nextRefreshAt\":\"soon\"}", data);
+  TEST_ASSERT_TRUE(shortResult.ok);
+  TEST_ASSERT_EQUAL_STRING("manual", data.updatedAt);
+  TEST_ASSERT_EQUAL_STRING("soon", data.nextRefresh);
+
+  const token_buddy::DashboardJsonParseResult longResult =
+      token_buddy::parseDashboardJson(
+          "{\"schemaVersion\":1,\"generatedAt\":\"timestamp-value-that-is-too-long\","
+          "\"nextRefreshAt\":\"another-value-that-is-too-long\"}",
+          data);
+  TEST_ASSERT_TRUE(longResult.ok);
+  TEST_ASSERT_EQUAL_STRING("timestamp-value-that...", data.updatedAt);
+  TEST_ASSERT_EQUAL_STRING("another-valu...", data.nextRefresh);
+}
+
 }  // namespace
 
 void runDashboardJsonTests() {
@@ -179,4 +198,5 @@ void runDashboardJsonTests() {
   RUN_TEST(test_partial_refresh_progress_preserves_metrics_and_sets_status);
   RUN_TEST(test_invalid_json_fails_without_corrupting_data);
   RUN_TEST(test_unsupported_schema_version_rejected);
+  RUN_TEST(test_unexpected_timestamp_text_copies_or_ellipsizes_cleanly);
 }

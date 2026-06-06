@@ -37,6 +37,57 @@ inline void copyField(char* dest, size_t destSize, const char* value) {
   snprintf(dest, destSize, "%s", value);
 }
 
+inline bool isDigit(char value) {
+  return value >= '0' && value <= '9';
+}
+
+inline const char* findDisplayTime(const char* value) {
+  if (value == nullptr) {
+    return nullptr;
+  }
+
+  for (const char* cursor = value; *cursor != '\0'; ++cursor) {
+    if (*cursor != 'T' && *cursor != ' ') {
+      continue;
+    }
+    const char* time = cursor + 1;
+    if (isDigit(time[0]) && isDigit(time[1]) && time[2] == ':' &&
+        isDigit(time[3]) && isDigit(time[4])) {
+      return time;
+    }
+  }
+  return nullptr;
+}
+
+inline void copyDisplayTimeOrText(char* dest, size_t destSize, const char* value) {
+  if (dest == nullptr || destSize == 0) {
+    return;
+  }
+  if (value == nullptr) {
+    dest[0] = '\0';
+    return;
+  }
+
+  const char* time = findDisplayTime(value);
+  if (time != nullptr && destSize >= 6) {
+    snprintf(dest, destSize, "%.5s", time);
+    return;
+  }
+
+  const size_t len = strlen(value);
+  if (len < destSize) {
+    snprintf(dest, destSize, "%s", value);
+    return;
+  }
+
+  if (destSize <= 4) {
+    snprintf(dest, destSize, "%s", value);
+    return;
+  }
+  const size_t prefixLen = destSize - 4;
+  snprintf(dest, destSize, "%.*s...", static_cast<int>(prefixLen), value);
+}
+
 inline uint32_t asUint32(JsonVariantConst value) {
   if (value.isNull()) {
     return 0;
@@ -127,13 +178,13 @@ inline DashboardJsonParseResult parseDashboardJson(const char* json, DashboardDa
   }
   copyField(next.error, sizeof(next.error), root["error"].is<const char*>() ? root["error"].as<const char*>() : "");
   if (root["generatedAt"].is<const char*>()) {
-    copyField(next.updatedAt, sizeof(next.updatedAt), root["generatedAt"].as<const char*>());
+    copyDisplayTimeOrText(next.updatedAt, sizeof(next.updatedAt), root["generatedAt"].as<const char*>());
   }
   if (root["ccusageVersion"].is<const char*>()) {
     copyField(next.ccusageVersion, sizeof(next.ccusageVersion), root["ccusageVersion"].as<const char*>());
   }
-  copyField(next.nextRefresh, sizeof(next.nextRefresh),
-            root["nextRefreshAt"].is<const char*>() ? root["nextRefreshAt"].as<const char*>() : "");
+  copyDisplayTimeOrText(next.nextRefresh, sizeof(next.nextRefresh),
+                        root["nextRefreshAt"].is<const char*>() ? root["nextRefreshAt"].as<const char*>() : "");
 
   JsonObjectConst today = root["today"].as<JsonObjectConst>();
   if (!today.isNull()) {
