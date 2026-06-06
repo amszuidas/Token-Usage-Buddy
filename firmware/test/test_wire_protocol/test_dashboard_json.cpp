@@ -191,6 +191,37 @@ void test_unexpected_timestamp_text_copies_or_ellipsizes_cleanly() {
   TEST_ASSERT_EQUAL_STRING("another-valu...", data.nextRefresh);
 }
 
+void test_malformed_timestamp_text_does_not_probe_past_end() {
+  token_buddy::DashboardData data;
+
+  const token_buddy::DashboardJsonParseResult result =
+      token_buddy::parseDashboardJson(
+          "{\"schemaVersion\":1,\"generatedAt\":\"T\",\"nextRefreshAt\":\"abcT\"}",
+          data);
+
+  TEST_ASSERT_TRUE(result.ok);
+  TEST_ASSERT_EQUAL_STRING("T", data.updatedAt);
+  TEST_ASSERT_EQUAL_STRING("abcT", data.nextRefresh);
+}
+
+void test_large_agent_totals_format_without_uint32_cap() {
+  token_buddy::DashboardData data;
+
+  const token_buddy::DashboardJsonParseResult result =
+      token_buddy::parseDashboardJson(
+          "{\"schemaVersion\":1,\"today\":{\"agents\":["
+          "{\"id\":\"codex\",\"label\":\"Codex\",\"totalTokens\":5000000000,\"percent\":80},"
+          "{\"id\":\"others\",\"label\":\"Others\",\"totalTokens\":1200000000000,\"percent\":20}"
+          "]}}",
+          data);
+
+  TEST_ASSERT_TRUE(result.ok);
+  TEST_ASSERT_EQUAL_STRING("Codex", data.agents[0].label);
+  TEST_ASSERT_EQUAL_STRING("5B", data.agents[0].value);
+  TEST_ASSERT_EQUAL_STRING("Others", data.agents[1].label);
+  TEST_ASSERT_EQUAL_STRING("1.2T", data.agents[1].value);
+}
+
 }  // namespace
 
 void runDashboardJsonTests() {
@@ -199,4 +230,6 @@ void runDashboardJsonTests() {
   RUN_TEST(test_invalid_json_fails_without_corrupting_data);
   RUN_TEST(test_unsupported_schema_version_rejected);
   RUN_TEST(test_unexpected_timestamp_text_copies_or_ellipsizes_cleanly);
+  RUN_TEST(test_malformed_timestamp_text_does_not_probe_past_end);
+  RUN_TEST(test_large_agent_totals_format_without_uint32_cap);
 }

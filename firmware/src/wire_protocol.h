@@ -51,7 +51,11 @@ inline const char* findDisplayTime(const char* value) {
       continue;
     }
     const char* time = cursor + 1;
-    if (isDigit(time[0]) && isDigit(time[1]) && time[2] == ':' &&
+    size_t remaining = 0;
+    while (remaining < 5 && time[remaining] != '\0') {
+      remaining += 1;
+    }
+    if (remaining == 5 && isDigit(time[0]) && isDigit(time[1]) && time[2] == ':' &&
         isDigit(time[3]) && isDigit(time[4])) {
       return time;
     }
@@ -88,15 +92,19 @@ inline void copyDisplayTimeOrText(char* dest, size_t destSize, const char* value
   snprintf(dest, destSize, "%.*s...", static_cast<int>(prefixLen), value);
 }
 
-inline uint32_t asUint32(JsonVariantConst value) {
+inline uint64_t asUint64(JsonVariantConst value) {
   if (value.isNull()) {
     return 0;
   }
-  const uint64_t raw = value.as<uint64_t>();
+  return value.as<uint64_t>();
+}
+
+inline uint32_t asUint32(JsonVariantConst value) {
+  const uint64_t raw = asUint64(value);
   return raw > UINT32_MAX ? UINT32_MAX : static_cast<uint32_t>(raw);
 }
 
-inline void formatTokenLabel(uint32_t value, char* dest, size_t destSize) {
+inline void formatTokenLabel(uint64_t value, char* dest, size_t destSize) {
   if (dest == nullptr || destSize == 0) {
     return;
   }
@@ -114,19 +122,19 @@ inline void formatTokenLabel(uint32_t value, char* dest, size_t destSize) {
 
   for (const Unit& unit : units) {
     if (value >= unit.threshold) {
-      const float scaled = static_cast<float>(value) / static_cast<float>(unit.threshold);
-      if (scaled >= 100.0f || (static_cast<uint32_t>(scaled * 10.0f) % 10U) == 0U) {
-        snprintf(dest, destSize, "%.0f%s", static_cast<double>(scaled), unit.suffix);
-      } else if (scaled >= 10.0f) {
-        snprintf(dest, destSize, "%.0f%s", static_cast<double>(scaled), unit.suffix);
+      const double scaled = static_cast<double>(value) / static_cast<double>(unit.threshold);
+      if (scaled >= 100.0 || (static_cast<uint64_t>(scaled * 10.0) % 10ULL) == 0ULL) {
+        snprintf(dest, destSize, "%.0f%s", scaled, unit.suffix);
+      } else if (scaled >= 10.0) {
+        snprintf(dest, destSize, "%.0f%s", scaled, unit.suffix);
       } else {
-        snprintf(dest, destSize, "%.1f%s", static_cast<double>(scaled), unit.suffix);
+        snprintf(dest, destSize, "%.1f%s", scaled, unit.suffix);
       }
       return;
     }
   }
 
-  snprintf(dest, destSize, "%lu", static_cast<unsigned long>(value));
+  snprintf(dest, destSize, "%llu", static_cast<unsigned long long>(value));
 }
 
 inline uint16_t agentColor(const char* id, const char* label, size_t index) {
@@ -191,7 +199,7 @@ inline DashboardJsonParseResult parseDashboardJson(const char* json, DashboardDa
     if (today["totalTokensLabel"].is<const char*>()) {
       copyField(next.todayTotal, sizeof(next.todayTotal), today["totalTokensLabel"].as<const char*>());
     } else if (!today["totalTokens"].isNull()) {
-      formatTokenLabel(asUint32(today["totalTokens"]), next.todayTotal, sizeof(next.todayTotal));
+      formatTokenLabel(asUint64(today["totalTokens"]), next.todayTotal, sizeof(next.todayTotal));
     }
 
     if (today["costLabel"].is<const char*>()) {
@@ -221,7 +229,7 @@ inline DashboardJsonParseResult parseDashboardJson(const char* json, DashboardDa
         const char* label = agent["label"].is<const char*>() ? agent["label"].as<const char*>() : "";
         const char* id = agent["id"].is<const char*>() ? agent["id"].as<const char*>() : nullptr;
         copyField(next.agents[index].label, sizeof(next.agents[index].label), label);
-        formatTokenLabel(asUint32(agent["totalTokens"]), next.agents[index].value,
+        formatTokenLabel(asUint64(agent["totalTokens"]), next.agents[index].value,
                          sizeof(next.agents[index].value));
         next.agents[index].percent = agent["percent"] | 0.0f;
         next.agents[index].color565 = agentColor(id, label[0] ? label : nullptr, index);
