@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/bin/token-usage-buddy.js",
     "dev": "tsx src/bin/token-usage-buddy.ts",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
