@@ -9,6 +9,7 @@
 #include "render_icons.h"
 #include "render_labels.h"
 #include "render_metrics.h"
+#include "render_palette.h"
 
 namespace token_buddy {
 namespace render {
@@ -18,10 +19,10 @@ constexpr int32_t kHeight = 240;
 constexpr int32_t kTopBarHeight = 30;
 constexpr uint16_t kBg = 0x0841;
 constexpr uint16_t kPanel = 0x18E3;
-constexpr uint16_t kText = 0xFFFF;
+constexpr uint16_t kText = kColorText;
 constexpr uint16_t kMuted = 0xA514;
 constexpr uint16_t kLine = 0x39E7;
-constexpr uint16_t kAccent = 0x05FF;
+constexpr uint16_t kAccent = kColorAccent;
 constexpr uint16_t kGood = 0x07E0;
 constexpr uint16_t kWarn = 0xFDC0;
 constexpr uint16_t kBad = 0xF800;
@@ -109,9 +110,9 @@ inline void drawProgressBar(M5GFX& gfx, int32_t x, int32_t y, int32_t width, int
 
 inline void drawToday(M5GFX& gfx, const DashboardData& data) {
   text(gfx, 16, 42, "TOKENS TODAY", kMuted, 2);
-  clippedText(gfx, 16, 68, data.todayTotal, 9, kText, 5);
+  clippedText(gfx, 16, 68, data.todayTotal, 9, todayTokenValueColor(), 5);
   text(gfx, 18, 126, "COST", kMuted, 2);
-  clippedText(gfx, 84, 126, data.cost, 12, kAccent, 3);
+  clippedText(gfx, 84, 126, data.cost, 12, todayCostValueColor(), 3);
 
   gfx.drawLine(16, 164, 304, 164, kLine);
   text(gfx, 18, 180, "Updated", kMuted, 2);
@@ -155,7 +156,6 @@ inline void drawTrend(M5GFX& gfx, const DashboardData& data) {
 
 inline void drawBreakdown(M5GFX& gfx, const DashboardData& data) {
   static const char* labels[4] = {"Input", "Cache Cr", "Cache Rd", "Output"};
-  static const uint16_t colors[4] = {0x07FF, 0xFD20, 0x7BEF, 0xC618};
 
   uint64_t total = 0;
   for (size_t i = 0; i < 4; ++i) {
@@ -174,7 +174,7 @@ inline void drawBreakdown(M5GFX& gfx, const DashboardData& data) {
     char value[12] = {};
     formatTokenLabel(data.breakdown[i], value, sizeof(value));
     clippedText(gfx, 214, y, value, 8, kMuted, 2);
-    drawProgressBar(gfx, 16, y + 26, 288, 14, percent, colors[i]);
+    drawProgressBar(gfx, 16, y + 26, 288, 14, percent, breakdownColor(i));
   }
 }
 

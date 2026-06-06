@@ -10,6 +10,8 @@ void test_non_zero_trend_values_keep_a_visible_bar();
 void test_breakdown_values_use_engineering_units();
 void test_bluetooth_icon_uses_standard_rune_segments();
 void test_freshness_label_distinguishes_current_and_stale_data();
+void test_today_value_colors_swap_token_and_cost_emphasis();
+void test_breakdown_colors_follow_semantic_roles();
 
 void test_view_navigation_wraps() {
   token_buddy::DashboardModel model;
@@ -44,5 +46,7 @@ int main(int argc, char **argv) {
   RUN_TEST(test_breakdown_values_use_engineering_units);
   RUN_TEST(test_bluetooth_icon_uses_standard_rune_segments);
   RUN_TEST(test_freshness_label_distinguishes_current_and_stale_data);
+  RUN_TEST(test_today_value_colors_swap_token_and_cost_emphasis);
+  RUN_TEST(test_breakdown_colors_follow_semantic_roles);
   return UNITY_END();
 }
