@@ -15,6 +15,11 @@ Use this checklist with an M5Stack Core2 v1.3 and the Mac bridge.
    pnpm build
    pnpm --filter @token-usage-buddy/mac-bridge start
    ```
+   Or install the macOS LaunchAgent and let it run in the background:
+   ```sh
+   pnpm bridge:agent:install
+   pnpm bridge:agent:status
+   ```
 
 3. Confirm the device advertises as `TokenUsageBuddy` and the bridge connects over BLE.
 

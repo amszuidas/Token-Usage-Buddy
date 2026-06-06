@@ -41,6 +41,29 @@ pnpm --filter @token-usage-buddy/mac-bridge build
 pnpm --filter @token-usage-buddy/mac-bridge start
 ```
 
+To keep the Mac bridge running in the background and start it automatically when
+you log in to macOS, install the user LaunchAgent:
+
+```sh
+pnpm bridge:agent:install
+```
+
+The installer builds the bridge, writes
+`~/Library/LaunchAgents/com.amszuidas.token-usage-buddy.bridge.plist`, starts it
+immediately, and restarts it if it exits. Logs are written to:
+
+```sh
+~/Library/Logs/TokenUsageBuddy/bridge.out.log
+~/Library/Logs/TokenUsageBuddy/bridge.err.log
+```
+
+Check or remove the background service:
+
+```sh
+pnpm bridge:agent:status
+pnpm bridge:agent:uninstall
+```
+
 For bridge development:
 
 ```sh

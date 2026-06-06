@@ -6,7 +6,10 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "bridge:agent:install": "scripts/install-launch-agent.sh",
+    "bridge:agent:status": "scripts/status-launch-agent.sh",
+    "bridge:agent:uninstall": "scripts/uninstall-launch-agent.sh"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",
