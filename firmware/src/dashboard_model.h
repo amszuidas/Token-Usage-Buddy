@@ -11,6 +11,8 @@ enum class View : uint8_t {
   Status = 4,
 };
 
+constexpr uint8_t kViewCount = 5;
+
 struct AgentRow {
   char label[12] = "";
   char value[12] = "";
@@ -40,11 +42,11 @@ public:
   DashboardData& mutableData() { return data_; }
 
   void nextView() {
-    view_ = static_cast<View>((static_cast<uint8_t>(view_) + 1) % 5);
+    view_ = static_cast<View>((static_cast<uint8_t>(view_) + 1) % kViewCount);
   }
 
   void previousView() {
-    view_ = static_cast<View>((static_cast<uint8_t>(view_) + 4) % 5);
+    view_ = static_cast<View>((static_cast<uint8_t>(view_) + kViewCount - 1) % kViewCount);
   }
 
   void setRefreshing(bool refreshing) {
