@@ -12,6 +12,7 @@ export interface DeviceEvent {
 const MAGIC = Buffer.from('TUB1', 'ascii');
 const KIND_DASHBOARD = 1;
 const MAX_FRAGMENT_BYTES = 150;
+const REFRESH_EVENT_JSON = /^\{\s*"ev"\s*:\s*"refresh"\s*\}$/;
 
 export function encodeDashboardFrames(jsonPayload: string, frameId: number): Buffer[] {
   if (!Number.isInteger(frameId) || frameId < 1 || frameId > 255) {
@@ -54,16 +55,8 @@ export function reassembleDashboardFrames(frames: Buffer[]): string {
 }
 
 export function decodeDeviceEvent(buf: Buffer): DeviceEvent | null {
-  try {
-    const parsed = JSON.parse(buf.toString('utf8')) as unknown;
-    if (typeof parsed !== 'object' || parsed === null) return null;
-    const keys = Object.keys(parsed);
-    if (keys.length !== 1 || keys[0] !== 'ev') return null;
-    const ev = (parsed as Record<string, unknown>).ev;
-    return ev === 'refresh' ? { ev } : null;
-  } catch {
-    return null;
-  }
+  const text = buf.toString('utf8').trim();
+  return REFRESH_EVENT_JSON.test(text) ? { ev: 'refresh' } : null;
 }
 
 function parseFrame(frame: Buffer) {
@@ -73,6 +66,8 @@ function parseFrame(frame: Buffer) {
   const payloadLength = frame[8];
   if (frame.length !== 9 + payloadLength) throw new Error('Invalid Token Usage Buddy frame length');
   if (payloadLength > MAX_FRAGMENT_BYTES) throw new Error('Dashboard frame fragment exceeds maximum length');
+  if (frame[7] === 0) throw new Error('Invalid dashboard chunk count');
+  if (frame[6] >= frame[7]) throw new Error('Invalid dashboard chunk index');
   return {
     kind: frame[4],
     frameId: frame[5],
