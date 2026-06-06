@@ -15,9 +15,16 @@ void test_refresh_event_payload_is_exact_json() {
   TEST_ASSERT_EQUAL_STRING("{\"ev\":\"refresh\"}", kRefreshEventJson);
 }
 
+void test_refresh_event_is_not_sendable_when_disconnected() {
+  TEST_ASSERT_FALSE(canSendRefreshEvent(false, true));
+  TEST_ASSERT_FALSE(canSendRefreshEvent(true, false));
+  TEST_ASSERT_TRUE(canSendRefreshEvent(true, true));
+}
+
 int main(int argc, char** argv) {
   UNITY_BEGIN();
   RUN_TEST(test_ble_contract_values_match_bridge_protocol);
   RUN_TEST(test_refresh_event_payload_is_exact_json);
+  RUN_TEST(test_refresh_event_is_not_sendable_when_disconnected);
   return UNITY_END();
 }

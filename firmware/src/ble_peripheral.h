@@ -16,6 +16,11 @@ constexpr const char* kBleServiceUuid = "8f720001-7a5f-4a9d-9b0f-6e2d3c4b5a10";
 constexpr const char* kBleDashboardRxUuid = "8f720002-7a5f-4a9d-9b0f-6e2d3c4b5a10";
 constexpr const char* kBleEventTxUuid = "8f720003-7a5f-4a9d-9b0f-6e2d3c4b5a10";
 constexpr const char* kRefreshEventJson = "{\"ev\":\"refresh\"}";
+constexpr size_t kRefreshEventJsonLength = 16;
+
+inline bool canSendRefreshEvent(bool connected, bool hasEventTx) {
+  return connected && hasEventTx;
+}
 
 #ifndef UNIT_TEST
 
@@ -67,18 +72,15 @@ class BlePeripheral {
     clearPayload();
   }
 
-  void sendRefreshEvent() {
-    if (eventTx_ == nullptr || !connected_) {
-      return;
+  bool sendRefreshEvent() {
+    if (!canSendRefreshEvent(connected_, eventTx_ != nullptr)) {
+      return false;
     }
-    eventTx_->notify(reinterpret_cast<const uint8_t*>(kRefreshEventJson), refreshEventLength());
+    eventTx_->notify(reinterpret_cast<const uint8_t*>(kRefreshEventJson), kRefreshEventJsonLength);
+    return true;
   }
 
  private:
-  static constexpr size_t refreshEventLength() {
-    return 16;
-  }
-
   class ServerCallbacks : public NimBLEServerCallbacks {
    public:
     explicit ServerCallbacks(BlePeripheral& peripheral) : peripheral_(peripheral) {}

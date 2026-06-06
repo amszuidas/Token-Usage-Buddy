@@ -18,12 +18,17 @@ void render() {
 
 void updateBleConnectionState() {
   const bool connected = ble.connected();
+  const bool wasRefreshing = model.isRefreshing();
   if (connected == lastBleConnected &&
-      model.data().bleConnected == connected) {
+      model.data().bleConnected == connected &&
+      (connected || !wasRefreshing)) {
     return;
   }
 
   model.mutableData().bleConnected = connected;
+  if (!connected) {
+    model.setRefreshing(false);
+  }
   lastBleConnected = connected;
   render();
 }
@@ -35,10 +40,9 @@ void handleCompletedPayload() {
 
   (void)ble.payload();
   model.setRefreshing(false);
-  model.mutableData().bleConnected = true;
+  model.mutableData().bleConnected = ble.connected();
   model.mutableData().stale = false;
   model.mutableData().error[0] = '\0';
-  lastBleConnected = true;
   ble.clearPayload();
   render();
 }
@@ -56,9 +60,10 @@ void handleTouch() {
       render();
       break;
     case token_buddy::TouchAction::Refresh:
-      model.setRefreshing(true);
-      ble.sendRefreshEvent();
-      render();
+      if (ble.sendRefreshEvent()) {
+        model.setRefreshing(true);
+        render();
+      }
       break;
     case token_buddy::TouchAction::Next:
       model.nextView();
