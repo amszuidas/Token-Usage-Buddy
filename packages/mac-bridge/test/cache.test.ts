@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -20,6 +20,14 @@ describe('snapshot cache', () => {
     const snapshot = { schemaVersion: 1, today: { totalTokens: 493_800_000 } };
     await writeCachedSnapshot(path, snapshot);
     await expect(readCachedSnapshot(path)).resolves.toEqual(snapshot);
+  });
+
+  it('creates parent directories and writes pretty JSON', async () => {
+    const path = join(dir, 'nested', 'cache.json');
+    const snapshot = { schemaVersion: 1, today: { totalTokens: 123 } };
+    await writeCachedSnapshot(path, snapshot);
+
+    await expect(readFile(path, 'utf8')).resolves.toBe(JSON.stringify(snapshot, null, 2));
   });
 
   it('returns null when cache file is missing', async () => {

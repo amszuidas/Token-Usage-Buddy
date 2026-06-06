@@ -7,9 +7,10 @@ export interface RefreshSchedulerOptions {
 export function createRefreshScheduler(options: RefreshSchedulerOptions) {
   let timer: NodeJS.Timeout | null = null;
   let stopped = true;
+  let generation = 0;
 
-  async function tick() {
-    if (stopped) return;
+  async function tick(tickGeneration: number) {
+    if (stopped || tickGeneration !== generation) return;
     try {
       await options.refresh();
     } catch (error) {
@@ -19,7 +20,9 @@ export function createRefreshScheduler(options: RefreshSchedulerOptions) {
         // Keep scheduler ticks from surfacing unhandled rejections.
       }
     } finally {
-      if (!stopped) timer = setTimeout(tick, options.refreshIntervalMs);
+      if (!stopped && tickGeneration === generation) {
+        timer = setTimeout(() => tick(tickGeneration), options.refreshIntervalMs);
+      }
     }
   }
 
@@ -27,10 +30,13 @@ export function createRefreshScheduler(options: RefreshSchedulerOptions) {
     start() {
       if (!stopped) return;
       stopped = false;
-      timer = setTimeout(tick, 0);
+      generation += 1;
+      const tickGeneration = generation;
+      timer = setTimeout(() => tick(tickGeneration), 0);
     },
     stop() {
       stopped = true;
+      generation += 1;
       if (timer) clearTimeout(timer);
       timer = null;
     },

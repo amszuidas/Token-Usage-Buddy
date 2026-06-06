@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRefreshScheduler } from '../src/scheduler.js';
 
 afterEach(() => {
+  vi.clearAllTimers();
   vi.useRealTimers();
 });
 
@@ -79,6 +80,36 @@ describe('createRefreshScheduler', () => {
     await vi.advanceTimersByTimeAsync(600_000);
 
     expect(refresh).toHaveBeenCalledTimes(2);
+    scheduler.stop();
+  });
+
+  it('does not let a stopped run schedule after restart when its refresh settles', async () => {
+    vi.useFakeTimers();
+    const staleRefresh = createDeferred<void>();
+    const currentRefresh = createDeferred<void>();
+    const refresh = vi
+      .fn()
+      .mockReturnValueOnce(staleRefresh.promise)
+      .mockReturnValueOnce(currentRefresh.promise)
+      .mockResolvedValue(undefined);
+    const scheduler = createRefreshScheduler({ refreshIntervalMs: 600_000, refresh });
+
+    scheduler.start();
+    vi.advanceTimersByTime(0);
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    scheduler.stop();
+    scheduler.start();
+    vi.advanceTimersByTime(0);
+    expect(refresh).toHaveBeenCalledTimes(2);
+
+    staleRefresh.resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    currentRefresh.resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(600_000);
+
+    expect(refresh).toHaveBeenCalledTimes(3);
     scheduler.stop();
   });
 });
