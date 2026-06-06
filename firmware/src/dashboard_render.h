@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "dashboard_model.h"
+#include "render_metrics.h"
 
 namespace token_buddy {
 namespace render {
@@ -132,7 +133,7 @@ inline void drawAgents(M5GFX& gfx, const DashboardData& data) {
 inline void drawTrend(M5GFX& gfx, const DashboardData& data) {
   text(gfx, 16, 42, "LAST 7 DAYS", kMuted, 2);
 
-  uint32_t maxTotal = 1;
+  uint64_t maxTotal = 1;
   for (size_t i = 0; i < 7; ++i) {
     if (data.sevenDayTotals[i] > maxTotal) {
       maxTotal = data.sevenDayTotals[i];
@@ -143,7 +144,7 @@ inline void drawTrend(M5GFX& gfx, const DashboardData& data) {
   constexpr int32_t maxBarHeight = 118;
   for (size_t i = 0; i < 7; ++i) {
     const int32_t x = 18 + static_cast<int32_t>(i) * 43;
-    const int32_t barHeight = static_cast<int32_t>((data.sevenDayTotals[i] * maxBarHeight) / maxTotal);
+    const int32_t barHeight = trendBarHeight(data.sevenDayTotals[i], maxTotal, maxBarHeight);
     gfx.fillRect(x, baseY - barHeight, 26, barHeight, kAccent);
     gfx.drawRect(x, baseY - maxBarHeight, 26, maxBarHeight, kLine);
     char label[4] = {};
@@ -156,7 +157,7 @@ inline void drawBreakdown(M5GFX& gfx, const DashboardData& data) {
   static const char* labels[4] = {"Input", "Cache Cr", "Cache Rd", "Output"};
   static const uint16_t colors[4] = {0x07FF, 0xFD20, 0x7BEF, 0xC618};
 
-  uint32_t total = 0;
+  uint64_t total = 0;
   for (size_t i = 0; i < 4; ++i) {
     total += data.breakdown[i];
   }
@@ -167,10 +168,11 @@ inline void drawBreakdown(M5GFX& gfx, const DashboardData& data) {
 
   for (size_t i = 0; i < 4; ++i) {
     const int32_t y = 42 + static_cast<int32_t>(i) * 44;
-    const float percent = (static_cast<float>(data.breakdown[i]) * 100.0f) / static_cast<float>(total);
+    const float percent =
+        static_cast<float>((static_cast<double>(data.breakdown[i]) * 100.0) / static_cast<double>(total));
     text(gfx, 16, y, labels[i], kText, 2);
-    char value[18] = {};
-    snprintf(value, sizeof(value), "%lu", static_cast<unsigned long>(data.breakdown[i]));
+    char value[12] = {};
+    formatTokenLabel(data.breakdown[i], value, sizeof(value));
     clippedText(gfx, 214, y, value, 8, kMuted, 2);
     drawProgressBar(gfx, 16, y + 26, 288, 14, percent, colors[i]);
   }

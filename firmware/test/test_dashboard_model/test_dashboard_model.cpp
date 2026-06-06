@@ -5,6 +5,9 @@ void test_bottom_band_left_center_right_classification();
 void test_touch_above_bottom_band_returns_none();
 void test_boundary_behavior_around_thirds_and_activation_threshold();
 void test_core2_touch_buttons_map_to_actions();
+void test_large_trend_values_scale_without_uint32_overflow();
+void test_non_zero_trend_values_keep_a_visible_bar();
+void test_breakdown_values_use_engineering_units();
 
 void test_view_navigation_wraps() {
   token_buddy::DashboardModel model;
@@ -34,5 +37,8 @@ int main(int argc, char **argv) {
   RUN_TEST(test_touch_above_bottom_band_returns_none);
   RUN_TEST(test_boundary_behavior_around_thirds_and_activation_threshold);
   RUN_TEST(test_core2_touch_buttons_map_to_actions);
+  RUN_TEST(test_large_trend_values_scale_without_uint32_overflow);
+  RUN_TEST(test_non_zero_trend_values_keep_a_visible_bar);
+  RUN_TEST(test_breakdown_values_use_engineering_units);
   return UNITY_END();
 }

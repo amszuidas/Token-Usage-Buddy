@@ -5,7 +5,7 @@ import {
   collectCcusageVersion as defaultCollectCcusageVersion,
 } from './ccusage-runner.js';
 import type { BridgeConfig } from './config.js';
-import { addDaysToYmd, formatDateYmd } from './date.js';
+import { addDaysToYmd, formatDateTimeOffset, formatDateYmd } from './date.js';
 import { buildDashboardSnapshot } from './usage-normalizer.js';
 
 type JsonObject = Record<string, unknown>;
@@ -48,11 +48,14 @@ export async function collectDashboardSnapshot(options: CollectDashboardSnapshot
       codex: codexUsage,
       opencode: opencodeUsage,
     } satisfies Record<UsageAgent, JsonObject>,
-    generatedAt: generatedAtDate.toISOString(),
+    generatedAt: formatDateTimeOffset(generatedAtDate, options.config.timezone),
     timezone: options.config.timezone,
     ccusageVersion,
     today,
-    nextRefreshAt: new Date(generatedAtDate.getTime() + options.config.refreshIntervalMs).toISOString(),
+    nextRefreshAt: formatDateTimeOffset(
+      new Date(generatedAtDate.getTime() + options.config.refreshIntervalMs),
+      options.config.timezone,
+    ),
     stale: false,
     refreshInProgress: false,
     error: null,

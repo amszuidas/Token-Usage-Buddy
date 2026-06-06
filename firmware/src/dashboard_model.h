@@ -30,8 +30,8 @@ struct DashboardData {
   bool bleConnected = false;
   char error[64] = "";
   AgentRow agents[4];
-  uint32_t sevenDayTotals[7] = {0};
-  uint32_t breakdown[4] = {0};
+  uint64_t sevenDayTotals[7] = {0};
+  uint64_t breakdown[4] = {0};
 };
 
 class DashboardModel {

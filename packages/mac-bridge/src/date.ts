@@ -27,3 +27,33 @@ export function formatDateYmd(date: Date, timezone: string): string {
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
   return `${get('year')}${get('month')}${get('day')}`;
 }
+
+export function formatDateTimeOffset(date: Date, timezone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '00';
+  const year = Number(get('year'));
+  const month = Number(get('month'));
+  const day = Number(get('day'));
+  const hour = Number(get('hour'));
+  const minute = Number(get('minute'));
+  const second = Number(get('second'));
+  const localAsUtcMs = Date.UTC(year, month - 1, day, hour, minute, second);
+  const offsetMinutes = Math.round((localAsUtcMs - Math.floor(date.getTime() / 1000) * 1000) / 60000);
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const absOffsetMinutes = Math.abs(offsetMinutes);
+  const offsetHour = Math.floor(absOffsetMinutes / 60).toString().padStart(2, '0');
+  const offsetMinute = (absOffsetMinutes % 60).toString().padStart(2, '0');
+
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get(
+    'second',
+  )}${sign}${offsetHour}:${offsetMinute}`;
+}

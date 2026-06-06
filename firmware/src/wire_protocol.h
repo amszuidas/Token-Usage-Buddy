@@ -8,6 +8,7 @@
 #include <ArduinoJson.h>
 
 #include "dashboard_model.h"
+#include "render_metrics.h"
 
 namespace token_buddy {
 
@@ -99,38 +100,6 @@ inline uint64_t asUint64(JsonVariantConst value) {
   return value.as<uint64_t>();
 }
 
-inline uint32_t asUint32(JsonVariantConst value) {
-  const uint64_t raw = asUint64(value);
-  return raw > UINT32_MAX ? UINT32_MAX : static_cast<uint32_t>(raw);
-}
-
-inline void formatTokenLabel(uint64_t value, char* dest, size_t destSize) {
-  if (dest == nullptr || destSize == 0) {
-    return;
-  }
-
-  struct Unit {
-    uint64_t threshold;
-    const char* suffix;
-  };
-  static constexpr Unit units[] = {
-      {1000000000000ULL, "T"},
-      {1000000000UL, "B"},
-      {1000000UL, "M"},
-      {1000UL, "K"},
-  };
-
-  for (const Unit& unit : units) {
-    if (value >= unit.threshold) {
-      const double scaled = static_cast<double>(value) / static_cast<double>(unit.threshold);
-      snprintf(dest, destSize, "%.1f%s", scaled, unit.suffix);
-      return;
-    }
-  }
-
-  snprintf(dest, destSize, "%llu", static_cast<unsigned long long>(value));
-}
-
 inline uint16_t agentColor(const char* id, const char* label, size_t index) {
   if ((id != nullptr && strcmp(id, "claude") == 0) ||
       (id == nullptr && label != nullptr && strcmp(label, "Claude") == 0) ||
@@ -204,10 +173,10 @@ inline DashboardJsonParseResult parseDashboardJson(const char* json, DashboardDa
 
     JsonObjectConst breakdown = today["breakdown"].as<JsonObjectConst>();
     if (!breakdown.isNull()) {
-      next.breakdown[0] = asUint32(breakdown["input"]);
-      next.breakdown[1] = asUint32(breakdown["cacheCreate"]);
-      next.breakdown[2] = asUint32(breakdown["cacheRead"]);
-      next.breakdown[3] = asUint32(breakdown["output"]);
+      next.breakdown[0] = asUint64(breakdown["input"]);
+      next.breakdown[1] = asUint64(breakdown["cacheCreate"]);
+      next.breakdown[2] = asUint64(breakdown["cacheRead"]);
+      next.breakdown[3] = asUint64(breakdown["output"]);
     }
 
     JsonArrayConst agents = today["agents"].as<JsonArrayConst>();
@@ -242,7 +211,7 @@ inline DashboardJsonParseResult parseDashboardJson(const char* json, DashboardDa
       if (index >= 7) {
         break;
       }
-      next.sevenDayTotals[index] = asUint32(day["totalTokens"]);
+      next.sevenDayTotals[index] = asUint64(day["totalTokens"]);
       index += 1;
     }
   }

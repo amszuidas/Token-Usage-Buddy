@@ -222,6 +222,25 @@ void test_large_agent_totals_format_without_uint32_cap() {
   TEST_ASSERT_EQUAL_STRING("1.2T", data.agents[1].value);
 }
 
+void test_large_breakdown_and_trend_values_parse_without_uint32_cap() {
+  token_buddy::DashboardData data;
+
+  const token_buddy::DashboardJsonParseResult result =
+      token_buddy::parseDashboardJson(
+          "{\"schemaVersion\":1,\"today\":{\"breakdown\":{"
+          "\"input\":5000000000,\"cacheCreate\":6000000000,"
+          "\"cacheRead\":7000000000,\"output\":8000000000"
+          "}},\"sevenDays\":[{\"totalTokens\":9000000000}]}",
+          data);
+
+  TEST_ASSERT_TRUE(result.ok);
+  TEST_ASSERT_EQUAL_UINT64(5000000000ULL, data.breakdown[0]);
+  TEST_ASSERT_EQUAL_UINT64(6000000000ULL, data.breakdown[1]);
+  TEST_ASSERT_EQUAL_UINT64(7000000000ULL, data.breakdown[2]);
+  TEST_ASSERT_EQUAL_UINT64(8000000000ULL, data.breakdown[3]);
+  TEST_ASSERT_EQUAL_UINT64(9000000000ULL, data.sevenDayTotals[0]);
+}
+
 }  // namespace
 
 void runDashboardJsonTests() {
@@ -232,4 +251,5 @@ void runDashboardJsonTests() {
   RUN_TEST(test_unexpected_timestamp_text_copies_or_ellipsizes_cleanly);
   RUN_TEST(test_malformed_timestamp_text_does_not_probe_past_end);
   RUN_TEST(test_large_agent_totals_format_without_uint32_cap);
+  RUN_TEST(test_large_breakdown_and_trend_values_parse_without_uint32_cap);
 }

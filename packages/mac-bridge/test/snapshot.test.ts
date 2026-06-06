@@ -19,6 +19,8 @@ describe('collectDashboardSnapshot', () => {
     });
 
     expect(snapshot.ccusageVersion).toBe('unknown');
+    expect(snapshot.generatedAt).toBe('2026-03-09T00:30:00-04:00');
+    expect(snapshot.nextRefreshAt).toBe('2026-03-09T00:40:00-04:00');
     expect(snapshot.today.date).toBe('2026-03-09');
     expect(collectCcusageJson).toHaveBeenCalledWith('all', {
       since: '20260303',
