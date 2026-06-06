@@ -123,13 +123,7 @@ inline void formatTokenLabel(uint64_t value, char* dest, size_t destSize) {
   for (const Unit& unit : units) {
     if (value >= unit.threshold) {
       const double scaled = static_cast<double>(value) / static_cast<double>(unit.threshold);
-      if (scaled >= 100.0 || (static_cast<uint64_t>(scaled * 10.0) % 10ULL) == 0ULL) {
-        snprintf(dest, destSize, "%.0f%s", scaled, unit.suffix);
-      } else if (scaled >= 10.0) {
-        snprintf(dest, destSize, "%.0f%s", scaled, unit.suffix);
-      } else {
-        snprintf(dest, destSize, "%.1f%s", scaled, unit.suffix);
-      }
+      snprintf(dest, destSize, "%.1f%s", scaled, unit.suffix);
       return;
     }
   }

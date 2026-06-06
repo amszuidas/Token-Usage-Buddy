@@ -90,15 +90,15 @@ void test_full_dashboard_json_maps_display_data() {
     TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>((i + 1) * 10), data.sevenDayTotals[i]);
   }
   TEST_ASSERT_EQUAL_STRING("Claude", data.agents[0].label);
-  TEST_ASSERT_EQUAL_STRING("1M", data.agents[0].value);
+  TEST_ASSERT_EQUAL_STRING("1.0M", data.agents[0].value);
   TEST_ASSERT_FLOAT_WITHIN(0.01f, 70.5f, data.agents[0].percent);
   TEST_ASSERT_EQUAL_UINT16(rgb565(0xD9, 0x77, 0x57), data.agents[0].color565);
   TEST_ASSERT_EQUAL_STRING("Codex", data.agents[1].label);
-  TEST_ASSERT_EQUAL_STRING("200K", data.agents[1].value);
+  TEST_ASSERT_EQUAL_STRING("200.0K", data.agents[1].value);
   TEST_ASSERT_FLOAT_WITHIN(0.01f, 14.25f, data.agents[1].percent);
   TEST_ASSERT_EQUAL_UINT16(rgb565(0x10, 0xA3, 0x7F), data.agents[1].color565);
   TEST_ASSERT_EQUAL_STRING("OpenCode", data.agents[2].label);
-  TEST_ASSERT_EQUAL_STRING("15K", data.agents[2].value);
+  TEST_ASSERT_EQUAL_STRING("15.0K", data.agents[2].value);
   TEST_ASSERT_EQUAL_UINT16(rgb565(0x03, 0xB0, 0x00), data.agents[2].color565);
   TEST_ASSERT_EQUAL_STRING("Others", data.agents[3].label);
   TEST_ASSERT_EQUAL_STRING("1.2K", data.agents[3].value);
@@ -217,7 +217,7 @@ void test_large_agent_totals_format_without_uint32_cap() {
 
   TEST_ASSERT_TRUE(result.ok);
   TEST_ASSERT_EQUAL_STRING("Codex", data.agents[0].label);
-  TEST_ASSERT_EQUAL_STRING("5B", data.agents[0].value);
+  TEST_ASSERT_EQUAL_STRING("5.0B", data.agents[0].value);
   TEST_ASSERT_EQUAL_STRING("Others", data.agents[1].label);
   TEST_ASSERT_EQUAL_STRING("1.2T", data.agents[1].value);
 }
