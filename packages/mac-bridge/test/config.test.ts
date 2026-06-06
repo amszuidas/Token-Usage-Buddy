@@ -21,4 +21,13 @@ describe('loadConfigFromEnv', () => {
       timezone: 'Asia/Shanghai',
     });
   });
+
+  it.each(['15abc', '0', '-1', '1.5', '', '   ', 'Infinity', 'NaN'])(
+    'falls back to 10 minutes for invalid refresh override %j',
+    (refreshMinutes) => {
+      expect(loadConfigFromEnv({ TOKEN_BUDDY_REFRESH_MINUTES: refreshMinutes })).toMatchObject({
+        refreshIntervalMs: 600_000,
+      });
+    },
+  );
 });

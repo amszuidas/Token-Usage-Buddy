@@ -8,8 +8,9 @@ export interface BridgeConfig {
 }
 
 export function loadConfigFromEnv(env: NodeJS.ProcessEnv): BridgeConfig {
-  const refreshMinutes = Number.parseInt(env.TOKEN_BUDDY_REFRESH_MINUTES ?? '10', 10);
-  const safeRefreshMinutes = Number.isFinite(refreshMinutes) && refreshMinutes >= 1 ? refreshMinutes : 10;
+  const refreshMinutesText = env.TOKEN_BUDDY_REFRESH_MINUTES ?? '10';
+  const refreshMinutes = /^\d+$/.test(refreshMinutesText) ? Number(refreshMinutesText) : NaN;
+  const safeRefreshMinutes = Number.isSafeInteger(refreshMinutes) && refreshMinutes >= 1 ? refreshMinutes : 10;
   return {
     refreshIntervalMs: safeRefreshMinutes * 60_000,
     timezone: env.TOKEN_BUDDY_TIMEZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
