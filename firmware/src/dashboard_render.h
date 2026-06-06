@@ -7,6 +7,7 @@
 
 #include "dashboard_model.h"
 #include "render_icons.h"
+#include "render_labels.h"
 #include "render_metrics.h"
 
 namespace token_buddy {
@@ -115,9 +116,7 @@ inline void drawToday(M5GFX& gfx, const DashboardData& data) {
   gfx.drawLine(16, 164, 304, 164, kLine);
   text(gfx, 18, 180, "Updated", kMuted, 2);
   clippedText(gfx, 120, 180, data.updatedAt[0] ? data.updatedAt : "Waiting", 15, kText, 2);
-  if (data.stale) {
-    text(gfx, 18, 210, "Stale", kWarn, 2);
-  }
+  text(gfx, 18, 210, freshnessLabel(data.stale), data.stale ? kWarn : kGood, 2);
 }
 
 inline void drawAgents(M5GFX& gfx, const DashboardData& data) {
