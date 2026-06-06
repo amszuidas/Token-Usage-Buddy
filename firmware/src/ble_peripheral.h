@@ -30,6 +30,7 @@ class BlePeripheral {
 
   void begin() {
     NimBLEDevice::init(kBleDeviceName);
+    NimBLEDevice::setDeviceName(kBleDeviceName);
 
     server_ = NimBLEDevice::createServer();
     server_->setCallbacks(&serverCallbacks_, false);
@@ -44,6 +45,7 @@ class BlePeripheral {
 
     NimBLEAdvertising* advertising = NimBLEDevice::getAdvertising();
     advertising->addServiceUUID(kBleServiceUuid);
+    advertising->setName(kBleDeviceName);
     advertising->setScanResponse(true);
     NimBLEDevice::startAdvertising();
   }

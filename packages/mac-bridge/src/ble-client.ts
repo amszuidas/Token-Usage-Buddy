@@ -1,4 +1,4 @@
-import * as noble from '@abandonware/noble';
+import noble, { type Characteristic, type Peripheral } from '@abandonware/noble';
 import { BLE_UUIDS, decodeDeviceEvent, encodeDashboardFrames } from '@token-usage-buddy/shared';
 import {
   type RefreshRequestHandler,
@@ -19,9 +19,9 @@ const EVENT_TX_UUID = compactUuid(BLE_UUIDS.eventTx);
 const SCAN_TIMEOUT_MS = 30_000;
 
 export function createBleClient(): MacBleClient {
-  let peripheral: noble.Peripheral | null = null;
-  let dashboardRx: noble.Characteristic | null = null;
-  let eventTx: noble.Characteristic | null = null;
+  let peripheral: Peripheral | null = null;
+  let dashboardRx: Characteristic | null = null;
+  let eventTx: Characteristic | null = null;
   let eventDataListener: ((data: Buffer) => void) | null = null;
   let refreshHandler: RefreshRequestHandler | null = null;
   let nextFrameId = 1;
@@ -115,10 +115,10 @@ function compactUuid(uuid: string): string {
 }
 
 function isConnected(
-  peripheral: noble.Peripheral | null,
-  dashboardRx: noble.Characteristic | null,
-  eventTx: noble.Characteristic | null,
-): dashboardRx is noble.Characteristic {
+  peripheral: Peripheral | null,
+  dashboardRx: Characteristic | null,
+  eventTx: Characteristic | null,
+): dashboardRx is Characteristic {
   return peripheral?.state === 'connected' && dashboardRx !== null && eventTx !== null;
 }
 
@@ -142,10 +142,10 @@ async function waitForPoweredOn(): Promise<void> {
   });
 }
 
-async function scanForTokenUsageBuddy(): Promise<noble.Peripheral> {
+async function scanForTokenUsageBuddy(): Promise<Peripheral> {
   return scanForPeripheral(noble, {
     serviceUuids: [SERVICE_UUID],
-    allowDuplicates: false,
+    allowDuplicates: true,
     timeoutMs: SCAN_TIMEOUT_MS,
     timeoutMessage: `Timed out scanning for ${BLE_UUIDS.deviceName}`,
     isMatch: (candidate) => {
