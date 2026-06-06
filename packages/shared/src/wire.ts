@@ -57,6 +57,8 @@ export function decodeDeviceEvent(buf: Buffer): DeviceEvent | null {
   try {
     const parsed = JSON.parse(buf.toString('utf8')) as unknown;
     if (typeof parsed !== 'object' || parsed === null) return null;
+    const keys = Object.keys(parsed);
+    if (keys.length !== 1 || keys[0] !== 'ev') return null;
     const ev = (parsed as Record<string, unknown>).ev;
     return ev === 'refresh' ? { ev } : null;
   } catch {
@@ -70,6 +72,7 @@ function parseFrame(frame: Buffer) {
   }
   const payloadLength = frame[8];
   if (frame.length !== 9 + payloadLength) throw new Error('Invalid Token Usage Buddy frame length');
+  if (payloadLength > MAX_FRAGMENT_BYTES) throw new Error('Dashboard frame fragment exceeds maximum length');
   return {
     kind: frame[4],
     frameId: frame[5],
