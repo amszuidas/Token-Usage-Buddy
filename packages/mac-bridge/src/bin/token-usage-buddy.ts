@@ -3,14 +3,14 @@
 import { readCachedSnapshot, writeCachedSnapshot } from '../cache.js';
 import { loadConfigFromEnv } from '../config.js';
 import { createBleClient } from '../ble-client.js';
+import { createBridgeRuntime } from '../bridge-runtime.js';
 import { createBridgeController } from '../controller.js';
 import { createRefreshScheduler } from '../scheduler.js';
 import { collectDashboardSnapshot } from '../snapshot.js';
 
+const RECONNECT_DELAY_MS = 5_000;
 const config = loadConfigFromEnv(process.env);
 const ble = createBleClient();
-
-await ble.connect();
 
 const controller = createBridgeController({
   config,
@@ -29,11 +29,17 @@ const scheduler = createRefreshScheduler({
   onError: (error) => console.error(error),
 });
 
-scheduler.start();
+const runtime = createBridgeRuntime({
+  ble,
+  scheduler,
+  reconnectDelayMs: RECONNECT_DELAY_MS,
+  onError: (error) => console.error(error),
+});
+
+runtime.start();
 
 async function shutdown(): Promise<void> {
-  scheduler.stop();
-  await ble.disconnect();
+  await runtime.stop();
 }
 
 process.once('SIGINT', () => {

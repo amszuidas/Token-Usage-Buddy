@@ -11,6 +11,7 @@ export interface MacBleClient {
   disconnect(): Promise<void>;
   sendJson(json: string): Promise<void>;
   onRefreshRequest(handler: RefreshRequestHandler): void;
+  onDisconnect(handler: () => void): void;
 }
 
 const SERVICE_UUID = compactUuid(BLE_UUIDS.service);
@@ -24,6 +25,7 @@ export function createBleClient(): MacBleClient {
   let eventTx: Characteristic | null = null;
   let eventDataListener: ((data: Buffer) => void) | null = null;
   let refreshHandler: RefreshRequestHandler | null = null;
+  let disconnectHandler: (() => void) | null = null;
   let nextFrameId = 1;
   let writeQueue = Promise.resolve();
 
@@ -39,6 +41,7 @@ export function createBleClient(): MacBleClient {
       tokenPeripheral.once('disconnect', () => {
         if (peripheral === tokenPeripheral) {
           clearConnection();
+          invokeDisconnectHandler(disconnectHandler);
         }
       });
 
@@ -93,7 +96,11 @@ export function createBleClient(): MacBleClient {
     refreshHandler = handler;
   }
 
-  return { connect, disconnect, sendJson, onRefreshRequest };
+  function onDisconnect(handler: () => void): void {
+    disconnectHandler = handler;
+  }
+
+  return { connect, disconnect, sendJson, onRefreshRequest, onDisconnect };
 
   function clearConnection(): void {
     cleanupEventListener();
@@ -107,6 +114,16 @@ export function createBleClient(): MacBleClient {
       eventTx.removeListener('data', eventDataListener);
     }
     eventDataListener = null;
+  }
+}
+
+function invokeDisconnectHandler(handler: (() => void) | null): void {
+  if (!handler) return;
+
+  try {
+    handler();
+  } catch {
+    // BLE disconnect callbacks must never surface unhandled errors.
   }
 }
 

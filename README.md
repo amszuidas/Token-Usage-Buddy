@@ -50,7 +50,8 @@ pnpm bridge:agent:install
 
 The installer builds the bridge, writes
 `~/Library/LaunchAgents/com.amszuidas.token-usage-buddy.bridge.plist`, starts it
-immediately, and restarts it if it exits. Logs are written to:
+immediately, restarts it if it exits, and keeps retrying the BLE connection when
+the device is restarted or temporarily unavailable. Logs are written to:
 
 ```sh
 ~/Library/Logs/TokenUsageBuddy/bridge.out.log
