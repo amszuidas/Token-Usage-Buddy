@@ -22,14 +22,14 @@ class FrameAssembler {
       return false;
     }
 
-    if (started_) {
-      if (parsed.frameId != frameId_ || parsed.chunkCount != chunkCount_) {
+    if (started_ && parsed.frameId != frameId_) {
+      startSequence(parsed.frameId, parsed.chunkCount);
+    } else if (started_) {
+      if (parsed.chunkCount != chunkCount_) {
         return false;
       }
     } else {
-      frameId_ = parsed.frameId;
-      chunkCount_ = parsed.chunkCount;
-      started_ = true;
+      startSequence(parsed.frameId, parsed.chunkCount);
     }
 
     if (seen_[parsed.chunkIndex]) {
@@ -109,12 +109,31 @@ class FrameAssembler {
       return false;
     }
 
-    parsed.frameId = frame[5];
+    const uint8_t frameId = frame[5];
+    if (frameId == 0) {
+      return false;
+    }
+
+    parsed.frameId = frameId;
     parsed.chunkIndex = chunkIndex;
     parsed.chunkCount = chunkCount;
     parsed.payloadLen = payloadLen;
     parsed.payload = frame + kFrameHeaderBytes;
     return true;
+  }
+
+  void startSequence(uint8_t frameId, uint8_t chunkCount) {
+    started_ = true;
+    complete_ = false;
+    frameId_ = frameId;
+    chunkCount_ = chunkCount;
+    receivedChunks_ = 0;
+    totalPayloadBytes_ = 0;
+    payload_[0] = '\0';
+    for (size_t i = 0; i < kMaxChunkCount; ++i) {
+      seen_[i] = false;
+      chunkLengths_[i] = 0;
+    }
   }
 
   bool finalizePayload() {
@@ -150,6 +169,7 @@ class FrameAssembler {
   char payload_[kMaxPayloadBytes + 1] = {};
 };
 
+#ifdef UNIT_TEST
 inline size_t buildTestFrame(
     uint8_t* out,
     size_t capacity,
@@ -181,5 +201,6 @@ inline size_t buildTestFrame(
 
   return kFrameHeaderBytes + payloadLen;
 }
+#endif
 
 }  // namespace token_buddy

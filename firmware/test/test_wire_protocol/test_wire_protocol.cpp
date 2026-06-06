@@ -87,20 +87,63 @@ void test_duplicate_chunk_rejected() {
   TEST_ASSERT_FALSE(assembler.accept(frame, len));
 }
 
-void test_mismatched_frame_id_and_chunk_count_rejected() {
+void test_mismatched_chunk_count_rejected_for_current_frame_id() {
   token_buddy::FrameAssembler assembler;
   uint8_t first[kMaxFrameBytes] = {};
-  uint8_t wrongId[kMaxFrameBytes] = {};
   uint8_t wrongCount[kMaxFrameBytes] = {};
 
   const size_t firstLen = token_buddy::buildTestFrame(first, sizeof(first), 9, 0, 2, "a", 1);
-  const size_t wrongIdLen = token_buddy::buildTestFrame(wrongId, sizeof(wrongId), 10, 1, 2, "b", 1);
   const size_t wrongCountLen = token_buddy::buildTestFrame(wrongCount, sizeof(wrongCount), 9, 1, 3, "b", 1);
 
   TEST_ASSERT_TRUE(assembler.accept(first, firstLen));
-  TEST_ASSERT_FALSE(assembler.accept(wrongId, wrongIdLen));
   TEST_ASSERT_FALSE(assembler.accept(wrongCount, wrongCountLen));
   TEST_ASSERT_FALSE(assembler.complete());
+}
+
+void test_complete_sequence_then_new_frame_id_replaces_payload() {
+  token_buddy::FrameAssembler assembler;
+  uint8_t first[kMaxFrameBytes] = {};
+  uint8_t second[kMaxFrameBytes] = {};
+
+  const size_t firstLen = token_buddy::buildTestFrame(first, sizeof(first), 20, 0, 1, "old", 3);
+  const size_t secondLen = token_buddy::buildTestFrame(second, sizeof(second), 21, 0, 1, "new", 3);
+
+  TEST_ASSERT_TRUE(assembler.accept(first, firstLen));
+  TEST_ASSERT_TRUE(assembler.complete());
+  TEST_ASSERT_EQUAL_STRING("old", assembler.payload());
+
+  TEST_ASSERT_TRUE(assembler.accept(second, secondLen));
+  TEST_ASSERT_TRUE(assembler.complete());
+  TEST_ASSERT_EQUAL_STRING("new", assembler.payload());
+}
+
+void test_incomplete_sequence_then_new_frame_id_starts_fresh() {
+  token_buddy::FrameAssembler assembler;
+  uint8_t oldFirst[kMaxFrameBytes] = {};
+  uint8_t newSecond[kMaxFrameBytes] = {};
+  uint8_t newFirst[kMaxFrameBytes] = {};
+
+  const size_t oldFirstLen = token_buddy::buildTestFrame(oldFirst, sizeof(oldFirst), 30, 0, 2, "old", 3);
+  const size_t newSecondLen = token_buddy::buildTestFrame(newSecond, sizeof(newSecond), 31, 1, 2, "two", 3);
+  const size_t newFirstLen = token_buddy::buildTestFrame(newFirst, sizeof(newFirst), 31, 0, 2, "one-", 4);
+
+  TEST_ASSERT_TRUE(assembler.accept(oldFirst, oldFirstLen));
+  TEST_ASSERT_FALSE(assembler.complete());
+
+  TEST_ASSERT_TRUE(assembler.accept(newSecond, newSecondLen));
+  TEST_ASSERT_FALSE(assembler.complete());
+  TEST_ASSERT_TRUE(assembler.accept(newFirst, newFirstLen));
+  TEST_ASSERT_TRUE(assembler.complete());
+  TEST_ASSERT_EQUAL_STRING("one-two", assembler.payload());
+}
+
+void test_zero_frame_id_rejected() {
+  token_buddy::FrameAssembler assembler;
+  uint8_t frame[kMaxFrameBytes] = {};
+  const size_t len = token_buddy::buildTestFrame(frame, sizeof(frame), 0, 0, 1, "x", 1);
+
+  TEST_ASSERT_NOT_EQUAL(0, len);
+  TEST_ASSERT_FALSE(assembler.accept(frame, len));
 }
 
 void test_missing_chunk_remains_incomplete() {
@@ -146,7 +189,10 @@ int main(int argc, char **argv) {
   RUN_TEST(test_invalid_length_rejected);
   RUN_TEST(test_zero_chunk_count_and_index_past_count_rejected);
   RUN_TEST(test_duplicate_chunk_rejected);
-  RUN_TEST(test_mismatched_frame_id_and_chunk_count_rejected);
+  RUN_TEST(test_mismatched_chunk_count_rejected_for_current_frame_id);
+  RUN_TEST(test_complete_sequence_then_new_frame_id_replaces_payload);
+  RUN_TEST(test_incomplete_sequence_then_new_frame_id_starts_fresh);
+  RUN_TEST(test_zero_frame_id_rejected);
   RUN_TEST(test_missing_chunk_remains_incomplete);
   RUN_TEST(test_oversized_fragment_rejected_by_builder_and_accept);
   return UNITY_END();
