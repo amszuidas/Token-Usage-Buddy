@@ -23,3 +23,14 @@ void test_boundary_behavior_around_thirds_and_activation_threshold() {
   TEST_ASSERT_EQUAL(token_buddy::TouchAction::Refresh, token_buddy::classifyTouch(212, 200));
   TEST_ASSERT_EQUAL(token_buddy::TouchAction::Next, token_buddy::classifyTouch(213, 200));
 }
+
+void test_core2_touch_buttons_map_to_actions() {
+  TEST_ASSERT_EQUAL(token_buddy::TouchAction::Previous,
+                    token_buddy::classifyButtonTouch(true, false, false));
+  TEST_ASSERT_EQUAL(token_buddy::TouchAction::Refresh,
+                    token_buddy::classifyButtonTouch(false, true, false));
+  TEST_ASSERT_EQUAL(token_buddy::TouchAction::Next,
+                    token_buddy::classifyButtonTouch(false, false, true));
+  TEST_ASSERT_EQUAL(token_buddy::TouchAction::None,
+                    token_buddy::classifyButtonTouch(false, false, false));
+}

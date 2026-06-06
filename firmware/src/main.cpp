@@ -54,12 +54,17 @@ void handleCompletedPayload() {
 }
 
 void handleTouch() {
-  const auto touch = M5.Touch.getDetail();
-  if (!touch.wasClicked()) {
-    return;
+  token_buddy::TouchAction action =
+      token_buddy::classifyButtonTouch(M5.BtnA.wasClicked(), M5.BtnB.wasClicked(),
+                                       M5.BtnC.wasClicked());
+  if (action == token_buddy::TouchAction::None) {
+    const auto touch = M5.Touch.getDetail();
+    if (!touch.wasClicked()) {
+      return;
+    }
+    action = token_buddy::classifyTouch(touch.x, touch.y);
   }
 
-  const token_buddy::TouchAction action = token_buddy::classifyTouch(touch.x, touch.y);
   switch (action) {
     case token_buddy::TouchAction::Previous:
       model.previousView();
@@ -86,6 +91,7 @@ void setup() {
   M5.begin();
   M5.Display.setRotation(1);
   M5.Display.setTextDatum(top_left);
+  M5.setTouchButtonHeight(40);
 
   ble.begin();
   model.mutableData().bleConnected = ble.connected();

@@ -10,6 +10,19 @@ enum class TouchAction : uint8_t {
   Next = 3,
 };
 
+inline TouchAction classifyButtonTouch(bool btnA, bool btnB, bool btnC) {
+  if (btnB) {
+    return TouchAction::Refresh;
+  }
+  if (btnA) {
+    return TouchAction::Previous;
+  }
+  if (btnC) {
+    return TouchAction::Next;
+  }
+  return TouchAction::None;
+}
+
 inline TouchAction classifyTouch(int32_t x, int32_t y) {
   constexpr int32_t kDisplayWidth = 320;
   constexpr int32_t kDisplayHeight = 240;
