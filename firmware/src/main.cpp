@@ -5,6 +5,7 @@
 #include "dashboard_model.h"
 #include "dashboard_render.h"
 #include "touch_nav.h"
+#include "wire_protocol.h"
 
 namespace {
 
@@ -38,11 +39,16 @@ void handleCompletedPayload() {
     return;
   }
 
-  (void)ble.payload();
-  model.setRefreshing(false);
-  model.mutableData().bleConnected = ble.connected();
-  model.mutableData().stale = false;
-  model.mutableData().error[0] = '\0';
+  token_buddy::DashboardData& data = model.mutableData();
+  const token_buddy::DashboardJsonParseResult parsed =
+      token_buddy::parseDashboardJson(ble.payload(), data);
+  if (parsed.ok) {
+    model.setRefreshing(parsed.refreshInProgress);
+  } else {
+    model.setRefreshing(false);
+    snprintf(data.error, sizeof(data.error), "Invalid dashboard data");
+  }
+  data.bleConnected = ble.connected();
   ble.clearPayload();
   render();
 }

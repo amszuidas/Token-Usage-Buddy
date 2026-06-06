@@ -180,6 +180,8 @@ void test_oversized_fragment_rejected_by_builder_and_accept() {
 
 }  // namespace
 
+void runDashboardJsonTests();
+
 int main(int argc, char **argv) {
   UNITY_BEGIN();
   RUN_TEST(test_single_frame_reassembly_succeeds);
@@ -195,5 +197,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_zero_frame_id_rejected);
   RUN_TEST(test_missing_chunk_remains_incomplete);
   RUN_TEST(test_oversized_fragment_rejected_by_builder_and_accept);
+  runDashboardJsonTests();
   return UNITY_END();
 }
