@@ -38,6 +38,30 @@ describe('BLE client internals', () => {
     expect(adapter.listenerCount('discover')).toBe(0);
   });
 
+  it('times out when starting a BLE scan hangs', async () => {
+    vi.useFakeTimers();
+    const adapter = new FakeScanAdapter();
+    adapter.startScanningAsync.mockReturnValue(new Promise(() => undefined));
+    const onRejected = vi.fn();
+
+    const scan = scanForPeripheral(adapter, {
+      serviceUuids: ['service'],
+      allowDuplicates: false,
+      timeoutMs: 1_000,
+      timeoutMessage: 'scan timed out',
+      isMatch: () => false,
+    });
+    void scan.catch(onRejected);
+    await Promise.resolve();
+
+    expect(adapter.listenerCount('discover')).toBe(1);
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(onRejected).toHaveBeenCalledWith(expect.objectContaining({ message: 'scan timed out' }));
+    expect(adapter.stopScanningAsync).toHaveBeenCalledTimes(1);
+    expect(adapter.listenerCount('discover')).toBe(0);
+  });
+
   it('stops scanning and removes discover listener on success', async () => {
     const adapter = new FakeScanAdapter();
     const peripheral = { id: 'token-usage-buddy' };

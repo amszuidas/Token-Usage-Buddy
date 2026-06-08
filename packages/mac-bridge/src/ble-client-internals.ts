@@ -15,6 +15,8 @@ export interface ScanForPeripheralOptions<TPeripheral> {
   isMatch: (peripheral: TPeripheral) => boolean;
 }
 
+const STOP_SCAN_TIMEOUT_MS = 1_000;
+
 export function invokeRefreshHandler(handler: RefreshRequestHandler | null): void {
   if (!handler) return;
 
@@ -42,12 +44,31 @@ export async function scanForPeripheral<TPeripheral>(
 
   adapter.on('discover', onDiscover);
   try {
-    await adapter.startScanningAsync(options.serviceUuids, options.allowDuplicates);
-    timeout = setTimeout(() => rejectScan(new Error(options.timeoutMessage)), options.timeoutMs);
-    return await discovered;
+    const timedOut = new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => reject(new Error(options.timeoutMessage)), options.timeoutMs);
+    });
+    const scanStarted = adapter.startScanningAsync(options.serviceUuids, options.allowDuplicates);
+    scanStarted.catch(() => undefined);
+    await Promise.race([scanStarted, timedOut]);
+    return await Promise.race([discovered, timedOut]);
   } finally {
     if (timeout) clearTimeout(timeout);
     adapter.removeListener('discover', onDiscover);
-    await adapter.stopScanningAsync().catch(() => undefined);
+    await stopScanning(adapter);
+  }
+}
+
+async function stopScanning<TPeripheral>(adapter: ScanAdapter<TPeripheral>): Promise<void> {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  const stopped = adapter.stopScanningAsync().catch(() => undefined);
+  try {
+    await Promise.race([
+      stopped,
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(resolve, STOP_SCAN_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
   }
 }

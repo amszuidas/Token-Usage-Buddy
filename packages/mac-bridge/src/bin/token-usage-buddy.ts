@@ -33,7 +33,12 @@ const runtime = createBridgeRuntime({
   ble,
   scheduler,
   reconnectDelayMs: RECONNECT_DELAY_MS,
+  maxConsecutiveConnectFailures: config.maxConnectFailuresBeforeExit,
   onError: (error) => console.error(error),
+  onFatalError: (error) => {
+    console.error('Restarting bridge after repeated BLE connection failures', error);
+    process.exit(75);
+  },
 });
 
 runtime.start();

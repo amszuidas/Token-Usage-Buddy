@@ -83,6 +83,41 @@ describe('createBridgeRuntime', () => {
     expect(ble.connect).toHaveBeenCalledTimes(1);
     expect(ble.disconnect).toHaveBeenCalledTimes(1);
   });
+
+  it('requests a fatal restart after too many consecutive BLE connection failures', async () => {
+    vi.useFakeTimers();
+    const firstError = new Error('first scan failure');
+    const secondError = new Error('second scan failure');
+    const ble = createFakeBle();
+    const scheduler = createFakeScheduler();
+    const onError = vi.fn();
+    const onFatalError = vi.fn();
+    ble.connect.mockRejectedValueOnce(firstError).mockRejectedValueOnce(secondError).mockResolvedValue(undefined);
+
+    const runtime = createBridgeRuntime({
+      ble,
+      scheduler,
+      reconnectDelayMs: 1_000,
+      maxConsecutiveConnectFailures: 2,
+      onError,
+      onFatalError,
+    });
+    runtime.start();
+
+    await flushAsyncWork();
+    expect(onError).toHaveBeenCalledWith(firstError);
+    expect(onFatalError).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(ble.connect).toHaveBeenCalledTimes(2);
+    expect(onError).toHaveBeenCalledWith(secondError);
+    expect(onFatalError).toHaveBeenCalledWith(secondError);
+    expect(scheduler.start).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(ble.connect).toHaveBeenCalledTimes(2);
+  });
 });
 
 function createFakeBle() {

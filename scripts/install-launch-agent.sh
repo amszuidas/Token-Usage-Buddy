@@ -57,6 +57,8 @@ cat > "$PLIST_PATH" <<PLIST
     <string>$(xml_escape "$HOME")</string>
     <key>PATH</key>
     <string>$(xml_escape "$LAUNCHD_PATH")</string>
+    <key>TOKEN_BUDDY_MAX_CONNECT_FAILURES_BEFORE_EXIT</key>
+    <string>1</string>
   </dict>
 
   <key>RunAtLoad</key>

@@ -51,7 +51,9 @@ pnpm bridge:agent:install
 The installer builds the bridge, writes
 `~/Library/LaunchAgents/com.amszuidas.token-usage-buddy.bridge.plist`, starts it
 immediately, restarts it if it exits, and keeps retrying the BLE connection when
-the device is restarted or temporarily unavailable. Logs are written to:
+the device is restarted or temporarily unavailable. The LaunchAgent also restarts
+the bridge process after a failed scan so macOS Bluetooth scanning recovers after
+sleep/wake. Logs are written to:
 
 ```sh
 ~/Library/Logs/TokenUsageBuddy/bridge.out.log
